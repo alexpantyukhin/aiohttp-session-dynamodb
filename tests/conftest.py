@@ -83,7 +83,9 @@ def dynamodb_server(docker, session_id, loop, request):
             client = session.create_client(
                 'dynamodb',
                 region_name='eu-west-1',
-                endpoint_url="http://{}:{}".format(host, port))
+                endpoint_url="http://{}:{}".format(host, port),
+                aws_access_key_id='',
+                aws_secret_access_key='')
 
             loop.run_until_complete(client.list_tables())
             break
@@ -115,9 +117,13 @@ def dynamodb(loop, dynamodb_params):
             'dynamodb',
             region_name='eu-west-1',
             endpoint_url="http://{}:{}"
-                .format(dynamodb_params['host'], dynamodb_params['port']))
+            .format(dynamodb_params['host'], dynamodb_params['port']),
+            aws_access_key_id='',
+            aws_secret_access_key=''
+        )
 
-    conn = loop.run_until_complete(init_dynamodb(loop))
+        return client
 
-    db = 'test_db'
-    return conn[db]
+    client = loop.run_until_complete(init_dynamodb(loop))
+
+    return client
