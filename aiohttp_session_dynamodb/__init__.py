@@ -7,6 +7,39 @@ from boto3.dynamodb.conditions import Key
 __version__ = '0.0.1'
 
 
+async def create_session_table(dynamodb_client, table_name):
+    await dynamodb_client.create_table(
+        TableName=table_name,
+        AttributeDefinitions=[
+            {
+                'AttributeName': 'key',
+                'AttributeType': 'S'
+            },
+        ],
+        KeySchema=[
+            {
+                'AttributeName': 'key',
+                'KeyType': 'HASH'
+            },
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 10,
+            'WriteCapacityUnits': 10
+        }
+    )
+
+    waiter = dynamodb_client.get_waiter('table_exists')
+    await waiter.wait(TableName=table_name)
+
+    await dynamodb_client.update_time_to_live(
+        TableName=table_name,
+        TimeToLiveSpecification={
+            'Enabled': True,
+            'AttributeName': 'expires_at'
+        }
+    )
+
+
 class DynamoDBStorage(AbstractStorage):
     def __init__(self, table, *, cookie_name="AIOHTTP_SESSION",
                  domain=None, max_age=None, path='/',
