@@ -8,6 +8,7 @@ from docker import from_env as docker_from_env
 import socket
 import aiobotocore
 from botocore.exceptions import ClientError
+from aiohttp_session_dynamodb import create_session_table
 
 
 @pytest.fixture(scope='session')
@@ -121,6 +122,8 @@ def dynamodb(loop, dynamodb_params):
             aws_access_key_id='',
             aws_secret_access_key=''
         )
+
+        await create_session_table(client, 'sessions', False)
 
         return client
 
