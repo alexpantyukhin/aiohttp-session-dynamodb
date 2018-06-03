@@ -63,7 +63,7 @@ class DynamoDBStorage(AbstractStorage):
             return Session(None, data=None, new=True, max_age=self.max_age)
         else:
             key = str(cookie)
-            stored_key = (self.cookie_name + '_' + key).encode('utf-8')
+            stored_key = (self.cookie_name + '_' + key)
             data_row = await self._client.get_item(
                 TableName=self._table_name,
                 Key={'pk': {'S': stored_key}}
@@ -74,7 +74,7 @@ class DynamoDBStorage(AbstractStorage):
                                new=True, max_age=self.max_age)
 
             try:
-                data = self._decoder(data_row['data'])
+                data = self._decoder(data_row['session_data'])
             except ValueError:
                 data = None
             return Session(key, data=data, new=False, max_age=self.max_age)
@@ -97,5 +97,14 @@ class DynamoDBStorage(AbstractStorage):
         data = self._encoder(self._get_session_data(session))
         # expire = datetime.utcnow() + timedelta(seconds=session.max_age) \
         #    if session.max_age is not None else None
-        stored_key = (self.cookie_name + '_' + key).encode('utf-8')
-        await self._table.update_item(Item={'pk': stored_key, 'data': data})
+        stored_key = (self.cookie_name + '_' + key)
+        await self._client.update_item(
+            TableName=self._table_name,
+            Key={'key': {'S': stored_key}},
+            UpdateExpression=(
+                'SET session_data = :session_data'
+            ),
+            ExpressionAttributeValues={
+                ':session_data': {'S': data},
+            }
+        )
