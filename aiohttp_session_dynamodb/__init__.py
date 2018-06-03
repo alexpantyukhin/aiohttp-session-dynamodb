@@ -6,16 +6,13 @@ import uuid
 __version__ = '0.0.1'
 
 
-async def create_session_table(dynamodb_client, table_name):
+async def create_session_table(dynamodb_client, table_name,
+                               add_update_ttl=True):
     await dynamodb_client.create_table(
         TableName=table_name,
         AttributeDefinitions=[
             {
                 'AttributeName': 'key',
-                'AttributeType': 'S'
-            },
-            {
-                'AttributeName': 'expires_at',
                 'AttributeType': 'S'
             }
         ],
@@ -34,13 +31,14 @@ async def create_session_table(dynamodb_client, table_name):
     waiter = dynamodb_client.get_waiter('table_exists')
     await waiter.wait(TableName=table_name)
 
-    await dynamodb_client.update_time_to_live(
-        TableName=table_name,
-        TimeToLiveSpecification={
-            'Enabled': True,
-            'AttributeName': 'expires_at'
-        }
-    )
+    if add_update_ttl:
+        await dynamodb_client.update_time_to_live(
+            TableName=table_name,
+            TimeToLiveSpecification={
+                'Enabled': True,
+                'AttributeName': 'expires_at'
+            }
+        )
 
 
 class DynamoDBStorage(AbstractStorage):
