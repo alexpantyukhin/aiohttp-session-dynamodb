@@ -14,6 +14,10 @@ async def create_session_table(dynamodb_client, table_name):
                 'AttributeName': 'key',
                 'AttributeType': 'S'
             },
+            {
+                'AttributeName': 'expires_at',
+                'AttributeType': 'S'
+            }
         ],
         KeySchema=[
             {
