@@ -123,7 +123,7 @@ def dynamodb(loop, dynamodb_params):
             aws_secret_access_key=''
         )
 
-        await create_session_table(client, 'sessions')
+        await create_session_table(client, 'sessions', False)
 
         return client
 
