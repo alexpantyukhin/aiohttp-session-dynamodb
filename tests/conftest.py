@@ -104,14 +104,14 @@ def dynamodb_server(docker, session_id, loop, request):
     container.remove(force=True)
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def dynamodb_params(dynamodb_server):
     return dict(host=dynamodb_server['host'],
                 port=dynamodb_server['port'])
 
 
-@pytest.fixture
-def dynamodb(loop, dynamodb_params):
+@pytest.fixture(scope='session')
+def dynamodb_client(loop, dynamodb_params):
     async def init_dynamodb(loop):
         session = aiobotocore.get_session(loop=loop)
         client = session.create_client(
