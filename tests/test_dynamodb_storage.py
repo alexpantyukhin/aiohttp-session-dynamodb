@@ -58,9 +58,10 @@ async def make_cookie_with_bad_value(client, dynamodb_client):
 async def load_cookie(client, dynamodb_client):
     cookies = client.session.cookie_jar.filter_cookies(client.make_url('/'))
     key = cookies['AIOHTTP_SESSION']
-    storage_key = ('AIOHTTP_SESSION_' + key.value).encode('utf-8')
-    data_row = await dynamodb_client.find_one(
-        filter={'key': storage_key}
+    storage_key = ('AIOHTTP_SESSION_' + key.value)
+    data_row = await dynamodb_client.get_item(
+        TableName='sessions',
+        Key={'pk': {'S': storage_key}}
     )
 
     return data_row['data']
