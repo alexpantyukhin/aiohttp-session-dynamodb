@@ -66,15 +66,18 @@ class DynamoDBStorage(AbstractStorage):
             stored_key = (self.cookie_name + '_' + key)
             data_row = await self._client.get_item(
                 TableName=self._table_name,
-                Key={'pk': {'S': stored_key}}
+                Key={'key': {'S': stored_key}}
             )
 
-            if data_row is None:
+            if data_row is None or 'Item' not in data_row:
                 return Session(None, data=None,
                                new=True, max_age=self.max_age)
 
             try:
-                data = self._decoder(data_row['session_data'])
+                data = {
+                    'session':
+                        self._decoder(data_row['Item']['session_data']['S'])
+                }
             except ValueError:
                 data = None
             return Session(key, data=data, new=False, max_age=self.max_age)
