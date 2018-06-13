@@ -22,9 +22,7 @@ def create_app(handler, dynamodb_client, max_age=None,
 async def make_cookie(client, dynamodb_client, data):
     session_data = json.dumps(data)
     key = uuid.uuid4().hex
-
     storage_key = ('AIOHTTP_SESSION_' + key)
-
     await dynamodb_client.update_item(
         TableName='sessions',
         Key={'key': {'S': storage_key}},
@@ -35,7 +33,6 @@ async def make_cookie(client, dynamodb_client, data):
             ':session_data': {'S': session_data},
         }
     )
-
     client.session.cookie_jar.update_cookies({'AIOHTTP_SESSION': key})
 
 
@@ -49,7 +46,7 @@ async def make_cookie_with_bad_value(client, dynamodb_client):
             'SET session_data = :session_data'
         ),
         ExpressionAttributeValues={
-            ':session_data': {'S': '0'},
+            ':session_data': {'S': '{}'},
         }
     )
     client.session.cookie_jar.update_cookies({'AIOHTTP_SESSION': key})
@@ -61,10 +58,10 @@ async def load_cookie(client, dynamodb_client):
     storage_key = ('AIOHTTP_SESSION_' + key.value)
     data_row = await dynamodb_client.get_item(
         TableName='sessions',
-        Key={'pk': {'S': storage_key}}
+        Key={'key': {'S': storage_key}}
     )
 
-    return data_row['data']
+    return json.loads(data_row['Item']['session_data']['S'])
 
 
 async def test_create_new_session(aiohttp_client, dynamodb_client):
@@ -178,14 +175,16 @@ async def test_create_cookie_in_handler(aiohttp_client, dynamodb_client):
     assert morsel['httponly']
     assert morsel['path'] == '/'
 
-    storage_key = ('AIOHTTP_SESSION_' + morsel.value).encode('utf-8')
-    count = await dynamodb_client.count(
-        {'key': storage_key}
+    storage_key = ('AIOHTTP_SESSION_' + morsel.value)
+    data_row = await dynamodb_client.get_item(
+        TableName='sessions',
+        Key={'key': {'S': storage_key}}
     )
-    assert count > 0
+
+    assert 'Item' in data_row
 
 
-async def test_create_new_session_if_key_doesnt_exists_in_redis(
+async def test_create_new_session_if_key_doesnt_exists_in_dynamodb(
         aiohttp_client, dynamodb_client):
     async def handler(request):
         session = await get_session(request)
