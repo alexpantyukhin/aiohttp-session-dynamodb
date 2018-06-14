@@ -60,6 +60,7 @@ class DynamoDBStorage(AbstractStorage):
         self._table_name = table_name
         self._key_factory = key_factory
         self._expire_index_created = False
+        self._table_exists = False
 
     async def load_session(self, request):
         self.__create_table_if_not_exists()
@@ -119,7 +120,7 @@ class DynamoDBStorage(AbstractStorage):
         )
 
     async __create_table_if_not_exists(self):
-        if self.__table_exists:
+        if self._table_exists:
             return
 
         tables = await get_table_names()
@@ -127,3 +128,4 @@ class DynamoDBStorage(AbstractStorage):
             await create_session_table(self.dynamodb_client,
                                        self._table_name)
 
+        self._table_exists = True
