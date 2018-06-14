@@ -40,6 +40,7 @@ async def create_session_table(dynamodb_client, table_name,
             }
         )
 
+
 async def get_table_names(dynamodb_client):
     resp = await dynamodb_client.list_tables()
     return resp["TableNames"]
@@ -63,7 +64,7 @@ class DynamoDBStorage(AbstractStorage):
         self._table_exists = False
 
     async def load_session(self, request):
-        self.__create_table_if_not_exists()
+        self._create_table_if_not_exists()
         cookie = self.load_cookie(request)
         if cookie is None:
             return Session(None, data=None, new=True, max_age=self.max_age)
@@ -89,7 +90,7 @@ class DynamoDBStorage(AbstractStorage):
             return Session(key, data=data, new=False, max_age=self.max_age)
 
     async def save_session(self, request, response, session):
-        self.__create_table_if_not_exists()
+        self._create_table_if_not_exists()
         key = session.identity
         if key is None:
             key = self._key_factory()
@@ -119,7 +120,7 @@ class DynamoDBStorage(AbstractStorage):
             }
         )
 
-    async __create_table_if_not_exists(self):
+    async def _create_table_if_not_exists(self):
         if self._table_exists:
             return
 
