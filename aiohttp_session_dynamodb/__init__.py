@@ -90,7 +90,7 @@ class DynamoDBStorage(AbstractStorage):
             return Session(key, data=data, new=False, max_age=self.max_age)
 
     async def save_session(self, request, response, session):
-        await elf._create_table_if_not_exists()
+        await self._create_table_if_not_exists()
         key = session.identity
         if key is None:
             key = self._key_factory()
