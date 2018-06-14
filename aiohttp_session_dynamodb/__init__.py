@@ -64,7 +64,7 @@ class DynamoDBStorage(AbstractStorage):
         self._table_exists = False
 
     async def load_session(self, request):
-        await self._create_table_if_not_exists()
+        await self._create_table_if_not_exists(self._client)
         cookie = self.load_cookie(request)
         if cookie is None:
             return Session(None, data=None, new=True, max_age=self.max_age)
@@ -90,7 +90,7 @@ class DynamoDBStorage(AbstractStorage):
             return Session(key, data=data, new=False, max_age=self.max_age)
 
     async def save_session(self, request, response, session):
-        await self._create_table_if_not_exists()
+        await self._create_table_if_not_exists(self._client)
         key = session.identity
         if key is None:
             key = self._key_factory()
