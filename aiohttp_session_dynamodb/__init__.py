@@ -41,6 +41,11 @@ async def create_session_table(dynamodb_client, table_name,
         )
 
 
+async def get_table_names(dynamodb_client):
+    resp = await dynamodb_client.list_tables()
+    return resp["TableNames"]
+
+
 class DynamoDBStorage(AbstractStorage):
     def __init__(self, client, table_name, *, cookie_name="AIOHTTP_SESSION",
                  domain=None, max_age=None, path='/',
@@ -56,8 +61,10 @@ class DynamoDBStorage(AbstractStorage):
         self._table_name = table_name
         self._key_factory = key_factory
         self._expire_index_created = False
+        self._table_exists = False
 
     async def load_session(self, request):
+        await self._create_table_if_not_exists()
         cookie = self.load_cookie(request)
         if cookie is None:
             return Session(None, data=None, new=True, max_age=self.max_age)
@@ -83,6 +90,7 @@ class DynamoDBStorage(AbstractStorage):
             return Session(key, data=data, new=False, max_age=self.max_age)
 
     async def save_session(self, request, response, session):
+        await self._create_table_if_not_exists()
         key = session.identity
         if key is None:
             key = self._key_factory()
@@ -111,3 +119,14 @@ class DynamoDBStorage(AbstractStorage):
                 ':session_data': {'S': data},
             }
         )
+
+    async def _create_table_if_not_exists(self):
+        if self._table_exists:
+            return
+
+        tables = await get_table_names(self._client)
+        if self._table_name not in tables:
+            await create_session_table(self._client,
+                                       self._table_name)
+
+        self._table_exists = True
