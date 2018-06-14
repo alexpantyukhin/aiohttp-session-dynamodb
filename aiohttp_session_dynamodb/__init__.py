@@ -124,7 +124,7 @@ class DynamoDBStorage(AbstractStorage):
         if self._table_exists:
             return
 
-        tables = await get_table_names()
+        tables = await get_table_names(self._client)
         if self._table_name not in tables:
             await create_session_table(self._client,
                                        self._table_name)
