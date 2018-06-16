@@ -1,5 +1,5 @@
 from aiohttp_session import AbstractStorage, Session
-from datetime import datetime, timedelta
+import time
 import json
 import uuid
 
@@ -80,10 +80,17 @@ class DynamoDBStorage(AbstractStorage):
                 return Session(None, data=None,
                                new=True, max_age=self.max_age)
 
+            data_row_item = data_row['Item']
+
+            if 'expiration_time' not in data_row_item or \
+               int(data_row_item['expiration_time']['S']) < time.time():
+                    return Session(None, data=None,
+                                   new=True, max_age=self.max_age)
+
             try:
                 data = {
                     'session':
-                        self._decoder(data_row['Item']['session_data']['S'])
+                        self._decoder(data_row_item['session_data']['S'])
                 }
             except ValueError:
                 data = None
@@ -106,8 +113,8 @@ class DynamoDBStorage(AbstractStorage):
                                  max_age=session.max_age)
 
         data = self._encoder(self._get_session_data(session))
-        expire = datetime.utcnow() + timedelta(seconds=session.max_age) \
-            if session.max_age is not None else None
+        expire = int(time.time()) + session.max_age \
+            if session.max_age is not None else 0
         stored_key = (self.cookie_name + '_' + key)
         await self._client.update_item(
             TableName=self._table_name,
