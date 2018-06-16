@@ -1,5 +1,5 @@
 from aiohttp_session import AbstractStorage, Session
-# from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 import json
 import uuid
 
@@ -107,13 +107,13 @@ class DynamoDBStorage(AbstractStorage):
 
         data = self._encoder(self._get_session_data(session))
         expire = datetime.utcnow() + timedelta(seconds=session.max_age) \
-           if session.max_age is not None else None
+                 if session.max_age is not None else None
         stored_key = (self.cookie_name + '_' + key)
         await self._client.update_item(
             TableName=self._table_name,
             Key={'key': {'S': stored_key}},
             UpdateExpression=(
-                'SET session_data = :session_data,' +\
+                'SET session_data = :session_data,' +
                 'expiration_time = :expiration_time'
             ),
             ExpressionAttributeValues={
