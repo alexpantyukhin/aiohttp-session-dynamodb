@@ -1,5 +1,5 @@
 from aiohttp_session import AbstractStorage, Session
-# from datetime import datetime, timedelta
+import time
 import json
 import uuid
 
@@ -36,7 +36,7 @@ async def create_session_table(dynamodb_client, table_name,
             TableName=table_name,
             TimeToLiveSpecification={
                 'Enabled': True,
-                'AttributeName': 'expires_at'
+                'AttributeName': 'expiration_time'
             }
         )
 
@@ -80,10 +80,17 @@ class DynamoDBStorage(AbstractStorage):
                 return Session(None, data=None,
                                new=True, max_age=self.max_age)
 
+            data_row_item = data_row['Item']
+
+            if 'expiration_time' in data_row_item and \
+               int(data_row_item['expiration_time']['S']) < time.time():
+                    return Session(None, data=None,
+                                   new=True, max_age=self.max_age)
+
             try:
                 data = {
                     'session':
-                        self._decoder(data_row['Item']['session_data']['S'])
+                        self._decoder(data_row_item['session_data']['S'])
                 }
             except ValueError:
                 data = None
@@ -106,17 +113,19 @@ class DynamoDBStorage(AbstractStorage):
                                  max_age=session.max_age)
 
         data = self._encoder(self._get_session_data(session))
-        # expire = datetime.utcnow() + timedelta(seconds=session.max_age) \
-        #    if session.max_age is not None else None
+        expire = int(time.time()) + session.max_age \
+            if session.max_age is not None else 0
         stored_key = (self.cookie_name + '_' + key)
         await self._client.update_item(
             TableName=self._table_name,
             Key={'key': {'S': stored_key}},
             UpdateExpression=(
-                'SET session_data = :session_data'
+                'SET session_data = :session_data,' +
+                'expiration_time = :expiration_time'
             ),
             ExpressionAttributeValues={
                 ':session_data': {'S': data},
+                ':expiration_time': {'S': str(expire)}
             }
         )
 
