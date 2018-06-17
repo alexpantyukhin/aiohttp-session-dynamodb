@@ -1,6 +1,6 @@
 aiohttp_session_dynamodb
 ===============
-.. image:: https://travis-ci.org/alexpantyukhin/aiohttp-session-dynamodb.svg?branch=master
+.. image:: https://travis-ci.com/alexpantyukhin/aiohttp-session-dynamodb.svg?branch=master
     :target: https://travis-ci.org/alexpantyukhin/aiohttp-session-dynamodb
 .. image:: https://codecov.io/github/alexpantyukhin/aiohttp-session-dynamodb/coverage.svg?branch=master
     :target: https://codecov.io/github/alexpantyukhin/aiohttp-session-dynamodb
