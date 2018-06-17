@@ -82,7 +82,7 @@ class DynamoDBStorage(AbstractStorage):
 
             data_row_item = data_row['Item']
 
-            if 'expiration_time' not in data_row_item or \
+            if 'expiration_time' in data_row_item and \
                int(data_row_item['expiration_time']['S']) < time.time():
                     return Session(None, data=None,
                                    new=True, max_age=self.max_age)
