@@ -125,7 +125,7 @@ class DynamoDBStorage(AbstractStorage):
             ),
             ExpressionAttributeValues={
                 ':session_data': {'S': data},
-                ':expiration_time': {'S', str(expire)}
+                ':expiration_time': {'S': str(expire)}
             }
         )
 
