@@ -227,7 +227,8 @@ async def test_load_session_dont_load_expired_session(aiohttp_client,
                                                       dynamodb_client):
     async def handler(request):
         session = await get_session(request)
-        if request.GET['exp'] != 'yes':
+        exp_param = request.rel_url.query.get('exp', None)
+        if exp_param is None:
             session['a'] = 1
             session['b'] = 2
         else:
