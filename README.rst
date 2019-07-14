@@ -5,7 +5,7 @@ aiohttp_session_dynamodb
 .. image:: https://codecov.io/github/alexpantyukhin/aiohttp-session-dynamodb/coverage.svg?branch=master
     :target: https://codecov.io/github/alexpantyukhin/aiohttp-session-dynamodb
 
-The library provides mongo sessions store for `aiohttp.web`__.
+The library provides dynamo sessions store for `aiohttp.web`__.
 
 .. _aiohttp_web: https://aiohttp.readthedocs.io/en/latest/web.html
 
@@ -36,38 +36,38 @@ A trivial usage example:
         return web.Response(text=text)
 
 
-    def init_mongo(loop):
+    def init_dynamo(loop):
 
-        async def init_mongo(loop):
-            url = "mongodb://localhost:27017"
+        async def init_dynamo(loop):
+            url = "dynamodb://localhost:27017"
             conn = aiomotor.AsyncIOMotorClient(
                 url, maxPoolSize=2, io_loop=loop)
             return conn
 
-        conn = loop.run_until_complete(init_mongo(loop))
+        conn = loop.run_until_complete(init_dynamo(loop))
 
         db = 'my_db'
         return conn[db]
 
 
-    async def setup_mongo(app, loop):
-        mongo = init_mongo(loop)
+    async def setup_dynamo(app, loop):
+        dynamo = init_dynamo(loop)
 
-        async def close_mongo(app):
-            mongo.client.close()
+        async def close_dynamo(app):
+            dynamo.client.close()
 
-        app.on_cleanup.append(close_mongo)
-        return mongo
+        app.on_cleanup.append(close_dynamo)
+        return dynamo
 
 
     def make_app():
         app = web.Application()
         loop = asyncio.get_event_loop()
 
-        mongo = setup_mongo(app, loop)
-        session_collection = mongo['sessions']
+        dynamo = setup_dynamo(app, loop)
+        session_collection = dynamo['sessions']
 
-        setup(app, MongoStorage(session_collection,
+        setup(app, DynamoDBStorage(session_collection,
                                 max_age=max_age,
                                 key_factory=lambda: uuid.uuid4().hex)
                                 )
